@@ -14,62 +14,73 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ahmadrosid.svgloader.SvgLoader;
+import com.ariel.countrylist.Fragments.first_fragment;
 import com.ariel.countrylist.Handlers.Country;
 import com.ariel.countrylist.R;
 
 
 import java.util.ArrayList;
 
+import static com.ariel.countrylist.Fragments.first_fragment.countryList;
 
-public class MyRecycleViewAdapter extends RecyclerView.Adapter<MyRecycleViewAdapter.MyViewHolder> {
+
+public class MyRecycleViewAdapter extends RecyclerView.Adapter<MyRecycleViewAdapter.MyViewHolder> implements Filterable {
         private ArrayList<Country> mDataset;
-        private Activity activity;
+        private ArrayList<Country> countryListFiltered;
 
-    private ArrayList<Country> countryListFiltered;
-    private ContactsAdapterListener listener;
+        private Activity activity;
+        private CustomFilter mFilter;
+
         View.OnClickListener mOnItemClickListener;
 
-//    @Override
-//    public Filter getFilter() {
-//        return new Filter() {
-//            @Override
-//            protected FilterResults performFiltering(CharSequence charSequence) {
-//                String charString = charSequence.toString();
-//
-//                if (charString.isEmpty()) {
-//                    countryListFiltered = mDataset;
-//                } else {
-//                    ArrayList<Country> filteredList = new ArrayList<>();
-//                    for (Country country : mDataset) {
-//                        // name match condition. this might differ depending on your requirement
-//                        // here we are looking for name or phone number match
-//                        if (country.getName().toLowerCase().contains(charString.toLowerCase())) {
-//                            Log.i("TEST ", country.getName());
-//                            filteredList.add(country);
-//                        }
-//                    }
-//
-//                    countryListFiltered = filteredList;
-//                }
-//
-//                FilterResults filterResults = new FilterResults();
-//                filterResults.values = countryListFiltered;
-//                return filterResults;
-//            }
-//
-//            @Override
-//            protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
-//                countryListFiltered = (ArrayList<Country>) filterResults.values;
-//                notifyDataSetChanged();
-//            }
-//        };
-//    }
+        public class CustomFilter extends Filter {
+            private MyRecycleViewAdapter mAdapter;
 
-    public interface ContactsAdapterListener {
-        void onCountrySelected(Country country);
-    }
+            private CustomFilter(MyRecycleViewAdapter mAdapter) {
+                super();
+                this.mAdapter = mAdapter;
+            }
 
-    // Provide a reference to the views for each data item
+            @Override
+            protected FilterResults performFiltering(CharSequence constraint) {
+
+                countryListFiltered.clear();
+
+                final FilterResults results = new FilterResults();
+                if (constraint.length() == 0) {
+                    countryListFiltered.addAll(countryList);
+                } else {
+                    final String filterPattern = constraint.toString().toLowerCase().trim();
+
+                    for (Country country : countryList) {
+                        if (country.getName().toLowerCase().startsWith(filterPattern)) {
+                            countryListFiltered.add(country);
+                        }
+                    }
+
+                }
+                System.out.println("Count Number " + countryListFiltered.size());
+                results.values = countryListFiltered;
+                results.count = countryListFiltered.size();
+                return results;
+            }
+
+            @Override
+            protected void publishResults(CharSequence constraint, FilterResults results) {
+
+                    System.out.println("Count Number 2 " + ((ArrayList<Country>) results.values).size());
+                    this.mAdapter.notifyDataSetChanged();
+            }
+        }
+
+        @Override
+        public Filter getFilter() {
+            return mFilter;
+        }
+
+
+
+        // Provide a reference to the views for each data item
         // Complex data items may need more than one view per item, and
         // you provide access to all the views for a data item in a view holder
 
@@ -96,6 +107,8 @@ public class MyRecycleViewAdapter extends RecyclerView.Adapter<MyRecycleViewAdap
         public MyRecycleViewAdapter(ArrayList<Country> myDataset, Activity activity) {
 
             mDataset = myDataset;
+            countryListFiltered = new ArrayList<>();
+            mFilter = new CustomFilter(MyRecycleViewAdapter.this);
             this.activity = activity;
         }
 
@@ -107,7 +120,6 @@ public class MyRecycleViewAdapter extends RecyclerView.Adapter<MyRecycleViewAdap
             View v = (View) LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.mylistitem, parent, false);
 
-           // v.setOnClickListener(mOnClickListener);
             MyViewHolder vh = new MyViewHolder(v,viewType);
 
             return vh;

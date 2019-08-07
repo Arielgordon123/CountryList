@@ -1,6 +1,7 @@
 package com.ariel.countrylist.Fragments;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -23,6 +24,7 @@ import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListAdapter;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,18 +51,13 @@ import java.util.Locale;
  */
 public class first_fragment extends Fragment {
     View curview;
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
     private RecyclerView recyclerView;
-    private MyRecycleViewAdapter myAdapter;
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-    private SearchView searchView;
+
+    private EditText searchCountry;
     private OnFirstFragmentInteractionListener mListener;
-    ArrayList<Country> countryList;
+    public static ArrayList<Country> countryList;
+    private MyRecycleViewAdapter myAdapter;
+    private  ProgressDialog progressDialog;
     public first_fragment() {
         // Required empty public constructor
     }
@@ -68,21 +65,11 @@ public class first_fragment extends Fragment {
 
         ((AppCompatActivity) getActivity()).getSupportActionBar().setTitle(Html.fromHtml("<font color='#ffffff'>"+title+ "</font>"));
     }
-    /**
-     *
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment first_fragment.
-     */
-    // TODO: Rename and change types and number of parameters
+
     public static first_fragment newInstance(String param1, String param2) {
         first_fragment fragment = new first_fragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+
         fragment.setArguments(args);
         return fragment;
     }
@@ -95,8 +82,7 @@ public class first_fragment extends Fragment {
     private View.OnClickListener onItemClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-            //TODO: Step 4 of 4: Finally call getTag() on the view.
-            // This viewHolder will have all required values.
+
             RecyclerView.ViewHolder viewHolder = (RecyclerView.ViewHolder) view.getTag();
             int position = viewHolder.getAdapterPosition();
             Country thisItem = countryList.get(position);
@@ -116,10 +102,7 @@ public class first_fragment extends Fragment {
         curview = inflater.inflate(R.layout.first_fragment, container, false);
         countryList = new ArrayList<>();
 
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+
         Button getAllCountries = curview.findViewById(R.id.getAllCountries);
 
         getAllCountries.setOnClickListener(new View.OnClickListener() {
@@ -128,6 +111,26 @@ public class first_fragment extends Fragment {
                 new getAllCountries((Activity) curview.getContext()).execute();
             }
         });
+
+        searchCountry = curview.findViewById(R.id.searchCountry);
+
+        searchCountry.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                myAdapter.getFilter().filter(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
         recyclerView = curview.findViewById(R.id.MyRecycleView);
 
         myAdapter = new MyRecycleViewAdapter(countryList, (Activity) curview.getContext());
@@ -138,19 +141,13 @@ public class first_fragment extends Fragment {
         //searchCountry = curview.findViewById(R.id.searchCountry);
 
 
+
         getAllCountries countriesApi = new getAllCountries((Activity) curview.getContext());
 
         countriesApi.execute();
         // Inflate the layout for this fragment
         return curview;
 
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.OnFirstFragmentInteractionListener(uri);
-        }
     }
 
     @Override
@@ -191,18 +188,19 @@ public class first_fragment extends Fragment {
         String baseUrl = "https://restcountries.eu/rest/v2/all?fields=name;nativeName;borders;flag;";
         private Activity myActivity;
 
-
-
+        // loading dialog while processing the data from the URL
 
         public getAllCountries( Activity activity) {
             myActivity = activity;
             setPageTitle("Country List");
+            progressDialog = new ProgressDialog(myActivity);
         }
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             // Toast.makeText(MainActivity.this,"Json Data is downloading", Toast.LENGTH_LONG).show();
-
+            progressDialog.setMessage("Loading...");
+            progressDialog.show();
         }
 
         @Override
@@ -273,6 +271,7 @@ public class first_fragment extends Fragment {
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
             recyclerView.setAdapter(myAdapter);
+            progressDialog.dismiss();
         }
 
     }
@@ -298,6 +297,8 @@ public class first_fragment extends Fragment {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            progressDialog.setMessage("Loading...");
+            progressDialog.show();
             // Toast.makeText(MainActivity.this,"Json Data is downloading", Toast.LENGTH_LONG).show();
 
         }
@@ -367,7 +368,6 @@ public class first_fragment extends Fragment {
                 }
             }
 
-
             return null;
         }
 
@@ -375,6 +375,8 @@ public class first_fragment extends Fragment {
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
             recyclerView.setAdapter(myAdapter);
+
+            progressDialog.dismiss();
         }
 
     }
